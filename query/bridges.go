@@ -1,12 +1,13 @@
 package query
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"io"
-	"net/http"
+	"io/ioutil"
 
 	"github.com/influxdata/flux"
+	"github.com/influxdata/flux/csv"
 	platform "github.com/influxdata/influxdb"
 )
 
@@ -52,6 +53,30 @@ func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *Pr
 	}
 
 	return n, nil
+}
+
+type QueryServiceProxyBridge struct {
+	ProxyQueryService ProxyQueryService
+}
+
+func (b QueryServiceProxyBridge) Query(ctx context.Context, req *Request) (flux.ResultIterator, error) {
+	d := csv.Dialect{ResultEncoderConfig: csv.DefaultEncoderConfig()}
+	preq := &ProxyRequest{
+		Request: *req,
+		Dialect: d,
+	}
+
+	// TODO(cwolff): spawn a go routine here to provide back pressure
+	//   but then how to return an error if one occurs?
+	buf := bytes.Buffer{}
+	_, err := b.ProxyQueryService.Query(ctx, &buf, preq)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(cwolff): something something stats here???
+	dec := csv.NewMultiResultDecoder(csv.ResultDecoderConfig{})
+	return dec.Decode(ioutil.NopCloser(&buf))
 }
 
 // REPLQuerier implements the repl.Querier interface while consuming a QueryService
