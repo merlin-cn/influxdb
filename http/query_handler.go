@@ -78,6 +78,11 @@ func NewFluxHandler(b *FluxBackend) *FluxHandler {
 	return h
 }
 
+// HTTPDialect is an encoding dialect that can write metadata to HTTP headers
+type HTTPDialect interface {
+	SetHeaders(w http.ResponseWriter)
+}
+
 func (h *FluxHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -308,7 +313,7 @@ type FluxService struct {
 // Query runs a flux query against a influx server and sends the results to the io.Writer.
 // Will use the token from the context over the token within the service struct.
 func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequest) (int64, error) {
-	u, err := newURL(s.Addr, fluxPath)
+	u, err := NewURL(s.Addr, fluxPath)
 	if err != nil {
 		return 0, err
 	}
@@ -333,7 +338,7 @@ func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequ
 	hreq.Header.Set("Accept", "text/csv")
 	hreq = hreq.WithContext(ctx)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(hreq)
 	if err != nil {
 		return 0, err
@@ -357,7 +362,7 @@ type FluxQueryService struct {
 
 // Query runs a flux query against a influx server and decodes the result
 func (s *FluxQueryService) Query(ctx context.Context, r *query.Request) (flux.ResultIterator, error) {
-	u, err := newURL(s.Addr, fluxPath)
+	u, err := NewURL(s.Addr, fluxPath)
 	if err != nil {
 		return nil, err
 	}
@@ -389,7 +394,7 @@ func (s *FluxQueryService) Query(ctx context.Context, r *query.Request) (flux.Re
 	hreq.Header.Set("Accept", "text/csv")
 	hreq = hreq.WithContext(ctx)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(hreq)
 	if err != nil {
 		return nil, err
@@ -406,7 +411,7 @@ func (s *FluxQueryService) Query(ctx context.Context, r *query.Request) (flux.Re
 
 // SimpleQuery runs a flux query with common parameters and returns CSV results.
 func SimpleQuery(addr, flux, org, token string) ([]byte, error) {
-	u, err := newURL(addr, fluxPath)
+	u, err := NewURL(addr, fluxPath)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +447,7 @@ func SimpleQuery(addr, flux, org, token string) ([]byte, error) {
 	req.Header.Set("Accept", "text/csv")
 
 	insecureSkipVerify := false
-	hc := newClient(u.Scheme, insecureSkipVerify)
+	hc := NewClient(u.Scheme, insecureSkipVerify)
 	res, err := hc.Do(req)
 	if err != nil {
 		return nil, err

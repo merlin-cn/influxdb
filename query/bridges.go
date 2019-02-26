@@ -55,6 +55,7 @@ func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *Pr
 	return n, nil
 }
 
+// QueryServiceProxyBridge implements QueryService while consuming a ProxyQueryService interface.
 type QueryServiceProxyBridge struct {
 	ProxyQueryService ProxyQueryService
 }

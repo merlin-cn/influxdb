@@ -267,7 +267,7 @@ func decodeDeleteMemberRequest(ctx context.Context, r *http.Request) (*deleteMem
 }
 
 func (s *UserResourceMappingService) FindUserResourceMappings(ctx context.Context, filter platform.UserResourceMappingFilter, opt ...platform.FindOptions) ([]*platform.UserResourceMapping, int, error) {
-	url, err := newURL(s.Addr, s.BasePath)
+	url, err := NewURL(s.Addr, s.BasePath)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -293,7 +293,7 @@ func (s *UserResourceMappingService) FindUserResourceMappings(ctx context.Contex
 	req.URL.RawQuery = query.Encode()
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, 0, err
@@ -313,7 +313,7 @@ func (s *UserResourceMappingService) CreateUserResourceMapping(ctx context.Conte
 		return err
 	}
 
-	url, err := newURL(s.Addr, resourceIDPath(s.BasePath, m.ResourceID))
+	url, err := NewURL(s.Addr, resourceIDPath(s.BasePath, m.ResourceID))
 	if err != nil {
 		return err
 	}
@@ -331,7 +331,7 @@ func (s *UserResourceMappingService) CreateUserResourceMapping(ctx context.Conte
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -352,7 +352,7 @@ func (s *UserResourceMappingService) CreateUserResourceMapping(ctx context.Conte
 }
 
 func (s *UserResourceMappingService) DeleteUserResourceMapping(ctx context.Context, resourceID platform.ID, userID platform.ID) error {
-	url, err := newURL(s.Addr, memberIDPath(s.BasePath, resourceID, userID))
+	url, err := NewURL(s.Addr, memberIDPath(s.BasePath, resourceID, userID))
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func (s *UserResourceMappingService) DeleteUserResourceMapping(ctx context.Conte
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err

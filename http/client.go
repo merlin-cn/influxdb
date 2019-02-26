@@ -16,7 +16,6 @@ type Service struct {
 	*OrganizationService
 	*UserService
 	*BucketService
-	*QueryService
 	*VariableService
 	*DashboardService
 }
@@ -43,10 +42,6 @@ func NewService(addr, token string) *Service {
 			Addr:  addr,
 			Token: token,
 		},
-		QueryService: &QueryService{
-			Addr:  addr,
-			Token: token,
-		},
 		DashboardService: &DashboardService{
 			Addr:  addr,
 			Token: token,
@@ -66,7 +61,7 @@ var (
 	defaultTransport = &http.Transport{}
 )
 
-func newURL(addr, path string) (*url.URL, error) {
+func NewURL(addr, path string) (*url.URL, error) {
 	u, err := url.Parse(addr)
 	if err != nil {
 		return nil, err
@@ -75,7 +70,7 @@ func newURL(addr, path string) (*url.URL, error) {
 	return u, nil
 }
 
-func newClient(scheme string, insecure bool) *traceClient {
+func NewClient(scheme string, insecure bool) *traceClient {
 	hc := &traceClient{
 		Client: http.Client{
 			Transport: defaultTransport,

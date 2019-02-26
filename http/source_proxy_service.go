@@ -33,7 +33,7 @@ func (s *SourceProxyQueryService) Query(ctx context.Context, w io.Writer, req *q
 }
 
 func (s *SourceProxyQueryService) queryFlux(ctx context.Context, w io.Writer, req *query.ProxyRequest) (int64, error) {
-	u, err := newURL(s.Addr, "/api/v2/query")
+	u, err := NewURL(s.Addr, "/api/v2/query")
 	if err != nil {
 		return 0, err
 	}
@@ -50,7 +50,7 @@ func (s *SourceProxyQueryService) queryFlux(ctx context.Context, w io.Writer, re
 	hreq.Header.Set("Content-Type", "application/json")
 	hreq = hreq.WithContext(ctx)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(hreq)
 	if err != nil {
 		return 0, err
@@ -69,7 +69,7 @@ func (s *SourceProxyQueryService) queryInfluxQL(ctx context.Context, w io.Writer
 		return 0, fmt.Errorf("compiler is not of type 'influxql'")
 	}
 
-	u, err := newURL(s.Addr, "/query")
+	u, err := NewURL(s.Addr, "/query")
 	if err != nil {
 		return 0, err
 	}
@@ -87,7 +87,7 @@ func (s *SourceProxyQueryService) queryInfluxQL(ctx context.Context, w io.Writer
 	hreq.Header.Set("Authorization", fmt.Sprintf("Token %s", s.Token))
 	hreq = hreq.WithContext(ctx)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(hreq)
 	if err != nil {
 		return 0, err

@@ -613,7 +613,7 @@ func (s *OrganizationService) FindOrganization(ctx context.Context, filter influ
 
 // FindOrganizations returns all organizations that match the filter via HTTP.
 func (s *OrganizationService) FindOrganizations(ctx context.Context, filter influxdb.OrganizationFilter, opt ...influxdb.FindOptions) ([]*influxdb.Organization, int, error) {
-	url, err := newURL(s.Addr, organizationPath)
+	url, err := NewURL(s.Addr, organizationPath)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -633,7 +633,7 @@ func (s *OrganizationService) FindOrganizations(ctx context.Context, filter infl
 	}
 
 	SetToken(s.Token, req)
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -664,7 +664,7 @@ func (s *OrganizationService) CreateOrganization(ctx context.Context, o *influxd
 		}
 	}
 
-	url, err := newURL(s.Addr, organizationPath)
+	url, err := NewURL(s.Addr, organizationPath)
 	if err != nil {
 		return err
 	}
@@ -682,7 +682,7 @@ func (s *OrganizationService) CreateOrganization(ctx context.Context, o *influxd
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -704,7 +704,7 @@ func (s *OrganizationService) CreateOrganization(ctx context.Context, o *influxd
 
 // UpdateOrganization updates the organization over HTTP.
 func (s *OrganizationService) UpdateOrganization(ctx context.Context, id influxdb.ID, upd influxdb.OrganizationUpdate) (*influxdb.Organization, error) {
-	u, err := newURL(s.Addr, organizationIDPath(id))
+	u, err := NewURL(s.Addr, organizationIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -722,7 +722,7 @@ func (s *OrganizationService) UpdateOrganization(ctx context.Context, id influxd
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -744,7 +744,7 @@ func (s *OrganizationService) UpdateOrganization(ctx context.Context, id influxd
 
 // DeleteOrganization removes organization id over HTTP.
 func (s *OrganizationService) DeleteOrganization(ctx context.Context, id influxdb.ID) error {
-	u, err := newURL(s.Addr, organizationIDPath(id))
+	u, err := NewURL(s.Addr, organizationIDPath(id))
 	if err != nil {
 		return err
 	}
@@ -755,7 +755,7 @@ func (s *OrganizationService) DeleteOrganization(ctx context.Context, id influxd
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err

@@ -294,7 +294,7 @@ type ScraperService struct {
 
 // ListTargets returns a list of all scraper targets.
 func (s *ScraperService) ListTargets(ctx context.Context) ([]influxdb.ScraperTarget, error) {
-	url, err := newURL(s.Addr, targetsPath)
+	url, err := NewURL(s.Addr, targetsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (s *ScraperService) ListTargets(ctx context.Context) ([]influxdb.ScraperTar
 	req.URL.RawQuery = query.Encode()
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
@@ -342,7 +342,7 @@ func (s *ScraperService) UpdateTarget(ctx context.Context, update *influxdb.Scra
 			Msg:  "provided scraper target ID has invalid format",
 		}
 	}
-	url, err := newURL(s.Addr, targetIDPath(update.ID))
+	url, err := NewURL(s.Addr, targetIDPath(update.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func (s *ScraperService) UpdateTarget(ctx context.Context, update *influxdb.Scra
 	}
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -379,7 +379,7 @@ func (s *ScraperService) UpdateTarget(ctx context.Context, update *influxdb.Scra
 
 // AddTarget creates a new scraper target and sets target.ID with the new identifier.
 func (s *ScraperService) AddTarget(ctx context.Context, target *influxdb.ScraperTarget, userID influxdb.ID) error {
-	url, err := newURL(s.Addr, targetsPath)
+	url, err := NewURL(s.Addr, targetsPath)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func (s *ScraperService) AddTarget(ctx context.Context, target *influxdb.Scraper
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -435,7 +435,7 @@ func (s *ScraperService) AddTarget(ctx context.Context, target *influxdb.Scraper
 
 // RemoveTarget removes a scraper target by ID.
 func (s *ScraperService) RemoveTarget(ctx context.Context, id influxdb.ID) error {
-	url, err := newURL(s.Addr, targetIDPath(id))
+	url, err := NewURL(s.Addr, targetIDPath(id))
 	if err != nil {
 		return err
 	}
@@ -446,7 +446,7 @@ func (s *ScraperService) RemoveTarget(ctx context.Context, id influxdb.ID) error
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err
@@ -458,7 +458,7 @@ func (s *ScraperService) RemoveTarget(ctx context.Context, id influxdb.ID) error
 
 // GetTargetByID returns a single target by ID.
 func (s *ScraperService) GetTargetByID(ctx context.Context, id influxdb.ID) (*influxdb.ScraperTarget, error) {
-	url, err := newURL(s.Addr, targetIDPath(id))
+	url, err := NewURL(s.Addr, targetIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +469,7 @@ func (s *ScraperService) GetTargetByID(ctx context.Context, id influxdb.ID) (*in
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err

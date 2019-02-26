@@ -589,7 +589,7 @@ type BucketService struct {
 
 // FindBucketByID returns a single bucket by ID.
 func (s *BucketService) FindBucketByID(ctx context.Context, id influxdb.ID) (*influxdb.Bucket, error) {
-	u, err := newURL(s.Addr, bucketIDPath(id))
+	u, err := NewURL(s.Addr, bucketIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -600,7 +600,7 @@ func (s *BucketService) FindBucketByID(ctx context.Context, id influxdb.ID) (*in
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
@@ -639,7 +639,7 @@ func (s *BucketService) FindBucket(ctx context.Context, filter influxdb.BucketFi
 // FindBuckets returns a list of buckets that match filter and the total count of matching buckets.
 // Additional options provide pagination & sorting.
 func (s *BucketService) FindBuckets(ctx context.Context, filter influxdb.BucketFilter, opt ...influxdb.FindOptions) ([]*influxdb.Bucket, int, error) {
-	u, err := newURL(s.Addr, bucketPath)
+	u, err := NewURL(s.Addr, bucketPath)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -674,7 +674,7 @@ func (s *BucketService) FindBuckets(ctx context.Context, filter influxdb.BucketF
 	req.URL.RawQuery = query.Encode()
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, 0, err
@@ -705,7 +705,7 @@ func (s *BucketService) FindBuckets(ctx context.Context, filter influxdb.BucketF
 
 // CreateBucket creates a new bucket and sets b.ID with the new identifier.
 func (s *BucketService) CreateBucket(ctx context.Context, b *influxdb.Bucket) error {
-	u, err := newURL(s.Addr, bucketPath)
+	u, err := NewURL(s.Addr, bucketPath)
 	if err != nil {
 		return err
 	}
@@ -723,7 +723,7 @@ func (s *BucketService) CreateBucket(ctx context.Context, b *influxdb.Bucket) er
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -752,7 +752,7 @@ func (s *BucketService) CreateBucket(ctx context.Context, b *influxdb.Bucket) er
 // UpdateBucket updates a single bucket with changeset.
 // Returns the new bucket state after update.
 func (s *BucketService) UpdateBucket(ctx context.Context, id influxdb.ID, upd influxdb.BucketUpdate) (*influxdb.Bucket, error) {
-	u, err := newURL(s.Addr, bucketIDPath(id))
+	u, err := NewURL(s.Addr, bucketIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -771,7 +771,7 @@ func (s *BucketService) UpdateBucket(ctx context.Context, id influxdb.ID, upd in
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -792,7 +792,7 @@ func (s *BucketService) UpdateBucket(ctx context.Context, id influxdb.ID, upd in
 
 // DeleteBucket removes a bucket by ID.
 func (s *BucketService) DeleteBucket(ctx context.Context, id influxdb.ID) error {
-	u, err := newURL(s.Addr, bucketIDPath(id))
+	u, err := NewURL(s.Addr, bucketIDPath(id))
 	if err != nil {
 		return err
 	}
@@ -803,7 +803,7 @@ func (s *BucketService) DeleteBucket(ctx context.Context, id influxdb.ID) error 
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err

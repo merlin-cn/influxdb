@@ -520,7 +520,7 @@ func labelIDPath(id platform.ID) string {
 
 // FindLabelByID returns a single label by ID.
 func (s *LabelService) FindLabelByID(ctx context.Context, id platform.ID) (*platform.Label, error) {
-	u, err := newURL(s.Addr, labelIDPath(id))
+	u, err := NewURL(s.Addr, labelIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -531,7 +531,7 @@ func (s *LabelService) FindLabelByID(ctx context.Context, id platform.ID) (*plat
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, err
@@ -555,7 +555,7 @@ func (s *LabelService) FindLabels(ctx context.Context, filter platform.LabelFilt
 
 // FindResourceLabels returns a list of labels, derived from a label mapping filter.
 func (s *LabelService) FindResourceLabels(ctx context.Context, filter platform.LabelMappingFilter) ([]*platform.Label, error) {
-	url, err := newURL(s.Addr, resourceIDPath(s.BasePath, filter.ResourceID))
+	url, err := NewURL(s.Addr, resourceIDPath(s.BasePath, filter.ResourceID))
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +567,7 @@ func (s *LabelService) FindResourceLabels(ctx context.Context, filter platform.L
 
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -589,7 +589,7 @@ func (s *LabelService) FindResourceLabels(ctx context.Context, filter platform.L
 
 // CreateLabel creates a new label.
 func (s *LabelService) CreateLabel(ctx context.Context, l *platform.Label) error {
-	u, err := newURL(s.Addr, labelsPath)
+	u, err := NewURL(s.Addr, labelsPath)
 	if err != nil {
 		return err
 	}
@@ -607,7 +607,7 @@ func (s *LabelService) CreateLabel(ctx context.Context, l *platform.Label) error
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -633,7 +633,7 @@ func (s *LabelService) CreateLabelMapping(ctx context.Context, m *platform.Label
 		return err
 	}
 
-	url, err := newURL(s.Addr, resourceIDPath(s.BasePath, m.ResourceID))
+	url, err := NewURL(s.Addr, resourceIDPath(s.BasePath, m.ResourceID))
 	if err != nil {
 		return err
 	}
@@ -651,7 +651,7 @@ func (s *LabelService) CreateLabelMapping(ctx context.Context, m *platform.Label
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -672,7 +672,7 @@ func (s *LabelService) CreateLabelMapping(ctx context.Context, m *platform.Label
 
 // UpdateLabel updates a label and returns the updated label.
 func (s *LabelService) UpdateLabel(ctx context.Context, id platform.ID, upd platform.LabelUpdate) (*platform.Label, error) {
-	u, err := newURL(s.Addr, labelIDPath(id))
+	u, err := NewURL(s.Addr, labelIDPath(id))
 	if err != nil {
 		return nil, err
 	}
@@ -690,7 +690,7 @@ func (s *LabelService) UpdateLabel(ctx context.Context, id platform.ID, upd plat
 	req.Header.Set("Content-Type", "application/json")
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -711,7 +711,7 @@ func (s *LabelService) UpdateLabel(ctx context.Context, id platform.ID, upd plat
 
 // DeleteLabel removes a label by ID.
 func (s *LabelService) DeleteLabel(ctx context.Context, id platform.ID) error {
-	u, err := newURL(s.Addr, labelIDPath(id))
+	u, err := NewURL(s.Addr, labelIDPath(id))
 	if err != nil {
 		return err
 	}
@@ -722,7 +722,7 @@ func (s *LabelService) DeleteLabel(ctx context.Context, id platform.ID) error {
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(u.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err
@@ -733,7 +733,7 @@ func (s *LabelService) DeleteLabel(ctx context.Context, id platform.ID) error {
 }
 
 func (s *LabelService) DeleteLabelMapping(ctx context.Context, m *platform.LabelMapping) error {
-	url, err := newURL(s.Addr, labelNamePath(s.BasePath, m.ResourceID, m.LabelID))
+	url, err := NewURL(s.Addr, labelNamePath(s.BasePath, m.ResourceID, m.LabelID))
 	if err != nil {
 		return err
 	}
@@ -744,7 +744,7 @@ func (s *LabelService) DeleteLabelMapping(ctx context.Context, m *platform.Label
 	}
 	SetToken(s.Token, req)
 
-	hc := newClient(url.Scheme, s.InsecureSkipVerify)
+	hc := NewClient(url.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(req)
 	if err != nil {
 		return err
