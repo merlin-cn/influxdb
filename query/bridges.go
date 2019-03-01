@@ -1,10 +1,10 @@
 package query
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"io"
-	"io/ioutil"
+	"net/http"
 
 	"github.com/influxdata/flux"
 	"github.com/influxdata/flux/csv"
@@ -67,17 +67,17 @@ func (b QueryServiceProxyBridge) Query(ctx context.Context, req *Request) (flux.
 		Dialect: d,
 	}
 
-	// TODO(cwolff): spawn a go routine here to provide back pressure
-	//   but then how to return an error if one occurs?
-	buf := bytes.Buffer{}
-	_, err := b.ProxyQueryService.Query(ctx, &buf, preq)
-	if err != nil {
-		return nil, err
-	}
+	r, w := io.Pipe()
 
-	// TODO(cwolff): something something stats here???
+	go func() {
+		_, err := b.ProxyQueryService.Query(ctx, w, preq)
+		// propagate the stats here (need to wrap the result iterator)
+		// Make the Release method attach the stats
+		w.CloseWithError(err)
+	}()
+
 	dec := csv.NewMultiResultDecoder(csv.ResultDecoderConfig{})
-	return dec.Decode(ioutil.NopCloser(&buf))
+	return dec.Decode(r)
 }
 
 // REPLQuerier implements the repl.Querier interface while consuming a QueryService
