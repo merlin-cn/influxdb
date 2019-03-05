@@ -62,10 +62,13 @@ func (s *SourceProxyQueryService) queryFlux(ctx context.Context, w io.Writer, re
 	}
 
 	var stats flux.Statistics
+	var n int64
+	defer func() {
+		query.SetResponseBytes(&stats, n)
+	}()
 	stats.Metadata = make(flux.Metadata)
-	n, err := io.Copy(w, resp.Body)
+	n, err = io.Copy(w, resp.Body)
 	if err != nil {
-		stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 		return stats, err
 	}
 
@@ -73,7 +76,6 @@ func (s *SourceProxyQueryService) queryFlux(ctx context.Context, w io.Writer, re
 	if err := json.Unmarshal(data, &stats); err != nil {
 		return stats, err
 	}
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 	return stats, nil
 }
 
@@ -114,17 +116,19 @@ func (s *SourceProxyQueryService) queryInfluxQL(ctx context.Context, w io.Writer
 	}
 
 	var stats flux.Statistics
-	stats.Metadata = make(flux.Metadata)
-	n, err := io.Copy(w, resp.Body)
+	var n int64
+	defer func() {
+		query.SetResponseBytes(&stats, n)
+	}()
+
+	n, err = io.Copy(w, resp.Body)
 	if err != nil {
-		stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 		return stats, err
 	}
 
-	data := []byte(resp.Trailer.Get("Influx-Query-Statistics"))
+	data := []byte(resp.Trailer.Get(QueryStatsTrailer))
 	if err := json.Unmarshal(data, &stats); err != nil {
 		return stats, err
 	}
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 	return stats, nil
 }

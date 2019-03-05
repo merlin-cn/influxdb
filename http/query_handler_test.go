@@ -46,7 +46,7 @@ func TestFluxService_Query(t *testing.T) {
 			status: http.StatusOK,
 			want: flux.Statistics{
 				Metadata: map[string][]interface{}{
-					"influxdb/response-bytes": []interface{}{int64(6)},
+					query.ResponseBytesMetadata: []interface{}{int64(6)},
 				},
 			},
 			wantW: "howdy\n",
@@ -75,7 +75,7 @@ func TestFluxService_Query(t *testing.T) {
 				fmt.Fprintln(w, "howdy")
 				var stats flux.Statistics
 				stats.Metadata = make(flux.Metadata)
-				stats.Metadata["influxdb/response-bytes"] = []interface{}{int64(len("howdy") + 1)}
+				stats.Metadata[query.ResponseBytesMetadata] = []interface{}{int64(len("howdy") + 1)}
 				data, _ := json.Marshal(&stats)
 				w.Header().Set("Influx-Query-Statistics", string(data))
 			}))

@@ -98,19 +98,21 @@ func (s *SourceProxyQueryService) fluxQuery(ctx context.Context, w io.Writer, re
 		return flux.Statistics{}, err
 	}
 
+	var n int64
 	var stats flux.Statistics
-	stats.Metadata = make(flux.Metadata)
-	n, err := io.Copy(w, resp.Body)
+	defer func() {
+		query.SetResponseBytes(&stats, n)
+	}()
+
+	n, err = io.Copy(w, resp.Body)
 	if err != nil {
-		stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 		return stats, err
 	}
 
-	data := []byte(resp.Trailer.Get("Influx-Query-Statistics"))
+	data := []byte(resp.Trailer.Get(platformhttp.QueryStatsTrailer))
 	if err := json.Unmarshal(data, &stats); err != nil {
 		return stats, err
 	}
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 	return stats, nil
 }
 
@@ -164,17 +166,20 @@ func (s *SourceProxyQueryService) influxQuery(ctx context.Context, w io.Writer, 
 	}
 
 	var stats flux.Statistics
+	var n int64
+	defer func() {
+		query.SetResponseBytes(&stats, n)
+	}()
+
 	stats.Metadata = make(flux.Metadata)
-	n, err := csv.NewMultiResultEncoder(csvDialect.ResultEncoderConfig).Encode(w, influxql.NewResponseIterator(res))
+	n, err = csv.NewMultiResultEncoder(csvDialect.ResultEncoderConfig).Encode(w, influxql.NewResponseIterator(res))
 	if err != nil {
-		stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 		return stats, err
 	}
 
-	data := []byte(resp.Trailer.Get("Influx-Query-Statistics"))
+	data := []byte(resp.Trailer.Get(platformhttp.QueryStatsTrailer))
 	if err := json.Unmarshal(data, &stats); err != nil {
 		return stats, err
 	}
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 	return stats, nil
 }

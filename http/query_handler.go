@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	fluxPath = "/api/v2/query"
+	fluxPath          = "/api/v2/query"
+	QueryStatsTrailer = "Influx-Query-Statistics"
 )
 
 // FluxBackend is all services and associated parameters required to construct
@@ -353,7 +354,7 @@ func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequ
 	stats.Metadata = make(flux.Metadata)
 	responseBytes, err := io.Copy(w, resp.Body)
 
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{responseBytes}
+	stats.Metadata[query.ResponseBytesMetadata] = []interface{}{responseBytes}
 	if err != nil {
 		return stats, err
 	}
@@ -365,7 +366,7 @@ func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequ
 
 	// We might have overwritten the response bytes when unmarshaling,
 	// so rewrite them.
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{responseBytes}
+	stats.Metadata[query.ResponseBytesMetadata] = []interface{}{responseBytes}
 
 	return stats, nil
 }

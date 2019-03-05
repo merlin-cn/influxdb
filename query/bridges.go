@@ -8,6 +8,48 @@ import (
 	"io"
 )
 
+const (
+	ResponseBytesMetadata = "influxdb/response-bytes"
+)
+
+func GetResponseBytes(stats *flux.Statistics) int64 {
+	if stats == nil {
+		return 0
+	}
+
+	md := stats.Metadata
+	if md == nil {
+		return 0
+	}
+
+	if vs, ok := md[ResponseBytesMetadata]; ok && len(vs) > 0 {
+		if v, ok := vs[0].(int64); ok {
+			return v
+		}
+	}
+
+	return 0
+}
+
+func SetResponseBytes(stats *flux.Statistics, bytes int64) {
+	if stats == nil {
+		return
+	}
+
+	if stats.Metadata == nil {
+		stats.Metadata = make(flux.Metadata)
+	}
+
+	stats.Metadata[ResponseBytesMetadata] = []interface{}{bytes}
+}
+
+func StatisticsWithResponseBytes(bytes int64) flux.Statistics {
+	stats := new(flux.Statistics)
+	stats.Metadata = make(flux.Metadata)
+	stats.Metadata[ResponseBytesMetadata] = []interface{}{bytes}
+	return *stats
+}
+
 // QueryServiceBridge implements the QueryService interface while consuming the AsyncQueryService interface.
 type QueryServiceBridge struct {
 	AsyncQueryService AsyncQueryService
@@ -37,7 +79,7 @@ func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *Pr
 	stats.Metadata = make(flux.Metadata)
 	encoder := req.Dialect.Encoder()
 	n, err := encoder.Encode(w, results)
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
+	stats.Metadata[ResponseBytesMetadata] = []interface{}{n}
 	if err != nil {
 		return stats, err
 	}
@@ -46,7 +88,7 @@ func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *Pr
 	if stats.Metadata == nil {
 		stats.Metadata = make(flux.Metadata)
 	}
-	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
+	stats.Metadata[ResponseBytesMetadata] = []interface{}{n}
 	return stats, nil
 }
 
@@ -63,16 +105,31 @@ func (b QueryServiceProxyBridge) Query(ctx context.Context, req *Request) (flux.
 	}
 
 	r, w := io.Pipe()
+	statsChan := make(chan flux.Statistics, 1)
 
 	go func() {
-		_, err := b.ProxyQueryService.Query(ctx, w, preq)
-		// propagate the stats here (need to wrap the result iterator)
-		// Make the Release method attach the stats
-		w.CloseWithError(err)
+		stats, err := b.ProxyQueryService.Query(ctx, w, preq)
+		defer func() {
+			w.CloseWithError(err)
+			statsChan <- stats
+		}()
 	}()
 
 	dec := csv.NewMultiResultDecoder(csv.ResultDecoderConfig{})
-	return dec.Decode(r)
+	ri, err := dec.Decode(r)
+	return asyncStatsResultIterator{
+		ResultIterator: ri,
+		stats:          statsChan,
+	}, err
+}
+
+type asyncStatsResultIterator struct {
+	flux.ResultIterator
+	stats chan flux.Statistics
+}
+
+func (i asyncStatsResultIterator) Statistics() flux.Statistics {
+	return <-i.stats
 }
 
 // REPLQuerier implements the repl.Querier interface while consuming a QueryService

@@ -16,8 +16,9 @@ type LoggingServiceBridge struct {
 }
 
 // Query executes and logs the query.
-func (s *LoggingServiceBridge) Query(ctx context.Context, w io.Writer, req *ProxyRequest) (n int64, err error) {
-	var stats flux.Statistics
+func (s *LoggingServiceBridge) Query(ctx context.Context, w io.Writer, req *ProxyRequest) (stats flux.Statistics, err error) {
+	var n int64
+	SetResponseBytes(&stats, 0)
 	defer func() {
 		r := recover()
 		if r != nil {
@@ -38,20 +39,21 @@ func (s *LoggingServiceBridge) Query(ctx context.Context, w io.Writer, req *Prox
 
 	results, err := s.QueryService.Query(ctx, &req.Request)
 	if err != nil {
-		return 0, err
+		return stats, err
 	}
 	// Check if this result iterator reports stats. We call this defer before cancel because
 	// the query needs to be finished before it will have valid statistics.
 	defer func() {
 		results.Release()
 		stats = results.Statistics()
+		SetResponseBytes(&stats, n)
 	}()
 
 	encoder := req.Dialect.Encoder()
 	n, err = encoder.Encode(w, results)
 	if err != nil {
-		return n, err
+		return stats, err
 	}
 	// The results iterator may have had an error independent of encoding errors.
-	return n, results.Err()
+	return stats, results.Err()
 }
