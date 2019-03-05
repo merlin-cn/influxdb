@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/influxdata/flux"
 	"github.com/influxdata/flux/csv"
 	"github.com/influxdata/flux/lang"
 	platform "github.com/influxdata/influxdb"
@@ -24,7 +27,7 @@ func TestFluxService_Query(t *testing.T) {
 		ctx     context.Context
 		r       *query.ProxyRequest
 		status  int
-		want    int64
+		want    flux.Statistics
 		wantW   string
 		wantErr bool
 	}{
@@ -41,8 +44,12 @@ func TestFluxService_Query(t *testing.T) {
 				Dialect: csv.DefaultDialect(),
 			},
 			status: http.StatusOK,
-			want:   6,
-			wantW:  "howdy\n",
+			want: flux.Statistics{
+				Metadata: map[string][]interface{}{
+					"influxdb/response-bytes": []interface{}{int64(6)},
+				},
+			},
+			wantW: "howdy\n",
 		},
 		{
 			name:  "error status",
@@ -63,8 +70,14 @@ func TestFluxService_Query(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Trailer", "Influx-Query-Statistics")
 				w.WriteHeader(tt.status)
 				fmt.Fprintln(w, "howdy")
+				var stats flux.Statistics
+				stats.Metadata = make(flux.Metadata)
+				stats.Metadata["influxdb/response-bytes"] = []interface{}{int64(len("howdy") + 1)}
+				data, _ := json.Marshal(&stats)
+				w.Header().Set("Influx-Query-Statistics", string(data))
 			}))
 			defer ts.Close()
 			s := &FluxService{
@@ -78,8 +91,8 @@ func TestFluxService_Query(t *testing.T) {
 				t.Errorf("FluxService.Query() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("FluxService.Query() = %v, want %v", got, tt.want)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("FluxService.Query() = -want/+got: %v", diff)
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("FluxService.Query() = %v, want %v", gotW, tt.wantW)

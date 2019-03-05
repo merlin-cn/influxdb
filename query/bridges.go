@@ -2,13 +2,10 @@ package query
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
-
 	"github.com/influxdata/flux"
 	"github.com/influxdata/flux/csv"
 	platform "github.com/influxdata/influxdb"
+	"io"
 )
 
 // QueryServiceBridge implements the QueryService interface while consuming the AsyncQueryService interface.
@@ -29,30 +26,28 @@ type ProxyQueryServiceBridge struct {
 	QueryService QueryService
 }
 
-func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *ProxyRequest) (int64, error) {
+func (b ProxyQueryServiceBridge) Query(ctx context.Context, w io.Writer, req *ProxyRequest) (flux.Statistics, error) {
 	results, err := b.QueryService.Query(ctx, &req.Request)
 	if err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 	defer results.Release()
 
-	// Setup headers
-	if w, ok := w.(http.ResponseWriter); ok {
-		w.Header().Set("Trailer", "Influx-Query-Statistics")
-	}
-
+	var stats flux.Statistics
+	stats.Metadata = make(flux.Metadata)
 	encoder := req.Dialect.Encoder()
 	n, err := encoder.Encode(w, results)
+	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
 	if err != nil {
-		return n, err
+		return stats, err
 	}
 
-	if w, ok := w.(http.ResponseWriter); ok {
-		data, _ := json.Marshal(results.Statistics())
-		w.Header().Set("Influx-Query-Statistics", string(data))
+	stats = results.Statistics()
+	if stats.Metadata == nil {
+		stats.Metadata = make(flux.Metadata)
 	}
-
-	return n, nil
+	stats.Metadata["influxdb/response-bytes"] = []interface{}{n}
+	return stats, nil
 }
 
 // QueryServiceProxyBridge implements QueryService while consuming a ProxyQueryService interface.

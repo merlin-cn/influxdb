@@ -105,9 +105,9 @@ func (h *FluxHandler) handleQuery(w http.ResponseWriter, r *http.Request) {
 	}
 	hd.SetHeaders(w)
 
-	n, err := h.ProxyQueryService.Query(ctx, w, req)
+	stats, err := h.ProxyQueryService.Query(ctx, w, req)
 	if err != nil {
-		if n == 0 {
+		if stats.ScannedBytes == 0 {
 			// Only record the error headers IFF nothing has been written to w.
 			EncodeError(ctx, err, w)
 			return
@@ -312,24 +312,24 @@ type FluxService struct {
 
 // Query runs a flux query against a influx server and sends the results to the io.Writer.
 // Will use the token from the context over the token within the service struct.
-func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequest) (int64, error) {
+func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequest) (flux.Statistics, error) {
 	u, err := NewURL(s.Addr, fluxPath)
 	if err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 
 	qreq, err := QueryRequestFromProxyRequest(r)
 	if err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(qreq); err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 
 	hreq, err := http.NewRequest("POST", u.String(), &body)
 	if err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 
 	SetToken(s.Token, hreq)
@@ -341,14 +341,33 @@ func (s *FluxService) Query(ctx context.Context, w io.Writer, r *query.ProxyRequ
 	hc := NewClient(u.Scheme, s.InsecureSkipVerify)
 	resp, err := hc.Do(hreq)
 	if err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
 	defer resp.Body.Close()
 
 	if err := CheckError(resp); err != nil {
-		return 0, err
+		return flux.Statistics{}, err
 	}
-	return io.Copy(w, resp.Body)
+
+	var stats flux.Statistics
+	stats.Metadata = make(flux.Metadata)
+	responseBytes, err := io.Copy(w, resp.Body)
+
+	stats.Metadata["influxdb/response-bytes"] = []interface{}{responseBytes}
+	if err != nil {
+		return stats, err
+	}
+
+	data := []byte(resp.Trailer.Get("Influx-Query-Statistics"))
+	if err := json.Unmarshal(data, &stats); err != nil {
+		return stats, err
+	}
+
+	// We might have overwritten the response bytes when unmarshaling,
+	// so rewrite them.
+	stats.Metadata["influxdb/response-bytes"] = []interface{}{responseBytes}
+
+	return stats, nil
 }
 
 var _ query.QueryService = (*FluxQueryService)(nil)
